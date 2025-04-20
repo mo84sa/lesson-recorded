@@ -432,7 +432,23 @@
             editTextForm: document.getElementById('edit-text-form'),
             editTextInput: document.getElementById('edit-text')
         };
+function handleLogin(e) {
+    e.preventDefault();
+    const username = elements.usernameInput.value.trim();
+    const password = elements.passwordInput.value.trim();
 
+    if (username === state.admin.username && password === state.admin.password) {
+        localStorage.setItem('loggedInUser', username);
+        toggleAppVisibility(true);
+        document.getElementById('adminLink').classList.remove('hidden'); // Show Admin Link
+    } else if (state.users.some(user => user.username === username && user.password === password)) {
+        localStorage.setItem('loggedInUser', username);
+        toggleAppVisibility(false);
+    } else {
+        alert('اسم المستخدم أو كلمة المرور غير صحيحة');
+    }
+    elements.loginForm.reset();
+}
         // Initialize Application
         function init() {
             setupEventListeners();
