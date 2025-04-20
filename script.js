@@ -1,4 +1,4 @@
-const users = [], texts = [], adminUsername = 'admin', adminPassword = 'adminpassword';
+const users = [], texts = [], adminUsername = 'admin', adminPassword = 'admin';
 let mediaRecorder, audioChunks = [], countdownInterval;
 
 document.getElementById('loginForm').addEventListener('submit', function (event) {
