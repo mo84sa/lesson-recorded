@@ -1,104 +1,157 @@
-const users = [], texts = [], adminUsername = 'admin', adminPassword = 'adminpassword';
-let mediaRecorder, audioChunks = [], countdownInterval;
+// Application State
+const state = {
+    users: JSON.parse(localStorage.getItem('users')) || [],
+    texts: JSON.parse(localStorage.getItem('texts')) || [
+        "بسم الله الرحمن الرحيم",
+        "الحمد لله رب العالمين"
+    ],
+    admin: {
+        username: 'admin',
+        password: 'admin123'
+    },
+    audio: {
+        stream: null,
+        recorder: null,
+        chunks: []
+    },
+    countdown: null
+};
 
-document.getElementById('loginForm').addEventListener('submit', function (event) {
-    event.preventDefault();
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+// DOM Elements
+const elements = {
+    authContainer: document.getElementById('authContainer'),
+    loginForm: document.getElementById('loginForm'),
+    signupForm: document.getElementById('signupForm'),
+    usernameInput: document.getElementById('username'),
+    passwordInput: document.getElementById('password'),
+    newUsernameInput: document.getElementById('newUsername'),
+    newPasswordInput: document.getElementById('newPassword'),
+    mainApp: document.getElementById('mainApp'),
+    logoutBtn: document.getElementById('logoutBtn'),
+    textSelect: document.getElementById('textSelect'),
+    recordingSection: document.getElementById('recordingSection'),
+    permissionBtn: document.getElementById('permissionBtn'),
+    recordBtn: document.getElementById('recordBtn'),
+    recordingStatus: document.getElementById('recordingStatus'),
+    countdownDisplay: document.getElementById('countdown'),
+    evaluation: document.getElementById('evaluation'),
+    evaluationResult: document.getElementById('evaluationResult'),
+    adminContent: document.getElementById('adminContent'),
+    addTextForm: document.getElementById('addTextForm'),
+    newTextInput: document.getElementById('newText'),
+    editTextForm: document.getElementById('editTextForm'),
+    editTextInput: document.getElementById('editText'),
+    editTextSelect: document.getElementById('editTextSelect')
+};
 
-    if (username === adminUsername && password === adminPassword) {
-        console.log('Admin login successful');
-        toggleVisibility(true);
-    } else if (users.some(user => user.username === username && user.password === password)) {
-        console.log('Regular user login successful');
-        toggleVisibility(false);
+// Initialize Application
+function init() {
+    updateTextSelects();
+    setupEventListeners();
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    if (loggedInUser) {
+        toggleAppVisibility(loggedInUser === state.admin.username);
+    }
+}
+
+// Event Listeners
+function setupEventListeners() {
+    elements.loginForm.addEventListener('submit', handleLogin);
+    elements.signupForm.addEventListener('submit', handleSignup);
+    elements.logoutBtn.addEventListener('click', handleLogout);
+    elements.addTextForm.addEventListener('submit', handleAddText);
+    elements.editTextSelect.addEventListener('change', handleEditTextSelect);
+    elements.editTextForm.addEventListener('submit', handleEditText);
+}
+
+// Auth Handlers
+function handleLogin(e) {
+    e.preventDefault();
+    const username = elements.usernameInput.value.trim();
+    const password = elements.passwordInput.value.trim();
+    if (username === state.admin.username && password === state.admin.password) {
+        localStorage.setItem('loggedInUser', username);
+        toggleAppVisibility(true);
+    } else if (state.users.some(user => user.username === username && user.password === password)) {
+        localStorage.setItem('loggedInUser', username);
+        toggleAppVisibility(false);
     } else {
-        console.log('Login failed');
         alert('اسم المستخدم أو كلمة المرور غير صحيحة');
     }
-});
+    elements.loginForm.reset();
+}
 
-document.getElementById('signupForm').addEventListener('submit', function (event) {
-    event.preventDefault();
-    const newUsername = document.getElementById('newUsername').value;
-    const newPassword = document.getElementById('newPassword').value;
-
-    if (users.some(user => user.username === newUsername)) {
+function handleSignup(e) {
+    e.preventDefault();
+    const username = elements.newUsernameInput.value.trim();
+    const password = elements.newPasswordInput.value.trim();
+    if (state.users.some(user => user.username === username)) {
         alert('اسم المستخدم موجود بالفعل');
         return;
     }
-
-    users.push({ username: newUsername, password: newPassword });
+    state.users.push({ username, password });
+    localStorage.setItem('users', JSON.stringify(state.users));
     alert('تم إنشاء الحساب بنجاح');
-    document.getElementById('signupForm').reset();
-});
-
-function toggleVisibility(isAdmin) {
-    document.getElementById('loginForm').classList.add('hidden');
-    document.getElementById('signupForm').classList.add('hidden');
-    document.getElementById('content').classList.remove('hidden');
-    document.getElementById('adminContent').classList.toggle('hidden', !isAdmin);
-    updateTextSelect();
+    elements.signupForm.reset();
 }
 
-document.getElementById('addTextForm').addEventListener('submit', function (event) {
-    event.preventDefault();
+function handleLogout() {
+    localStorage.removeItem('loggedInUser');
+    toggleAppVisibility(false);
+}
 
-    const newText = document.getElementById('newText').value;
-    console.log('Attempting to add new text:', newText);
-
-    // Input validation
-    if (newText.trim() === '') {
+// Admin Handlers
+function handleAddText(e) {
+    e.preventDefault();
+    const newText = elements.newTextInput.value.trim();
+    if (!newText) {
         alert('الرجاء إدخال نص');
         return;
     }
-
-    texts.push(newText); // Add text to array
-    console.log('Text added successfully:', texts);
-
-    updateTextSelect(); // Update dropdown list
+    state.texts.push(newText);
+    localStorage.setItem('texts', JSON.stringify(state.texts));
+    updateTextSelects();
     alert('تم إضافة النص بنجاح');
-
-    document.getElementById('addTextForm').reset(); // Clear input field
-});
-
-function updateTextSelect() {
-    const textSelect = document.getElementById('textSelect');
-    textSelect.innerHTML = '<option value="">اختر نصًا</option>' +
-        texts.map(text => `<option value="${text}">${text}</option>`).join('');
-    console.log('Dropdown updated with texts:', texts);
+    elements.addTextForm.reset();
 }
 
-document.getElementById('logoutBtn').addEventListener('click', logout);
-
-function logout() {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
+function handleEditTextSelect(e) {
+    const selectedIndex = e.target.selectedIndex - 1;
+    if (selectedIndex >= 0) {
+        elements.editTextForm.classList.remove('hidden');
+        elements.editTextInput.value = state.texts[selectedIndex];
+    } else {
+        elements.editTextForm.classList.add('hidden');
     }
-
-    if (window.audioStream) {
-        window.audioStream.getTracks().forEach(track => track.stop());
-        window.audioStream = null;
-    }
-
-    clearInterval(countdownInterval);
-
-    document.getElementById('loginForm').classList.remove('hidden');
-    document.getElementById('signupForm').classList.remove('hidden');
-    document.getElementById('content').classList.add('hidden');
-    document.getElementById('adminContent').classList.add('hidden');
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
-    document.getElementById('permissionStatus').className = '';
-    document.getElementById('permissionStatus').classList.add('hidden');
-    document.getElementById('permissionBtn').classList.remove('hidden');
-    document.getElementById('recordBtn').classList.add('hidden');
-    document.getElementById('recordingStatus').classList.add('hidden');
-    document.getElementById('evaluation').classList.add('hidden');
-
-    audioChunks = [];
-    mediaRecorder = null;
-    countdownInterval = null;
-
-    alert('تم تسجيل الخروج بنجاح');
 }
+
+function handleEditText(e) {
+    e.preventDefault();
+    const selectedIndex = elements.editTextSelect.selectedIndex - 1;
+    const editedText = elements.editTextInput.value.trim();
+    if (!editedText) {
+        alert('الرجاء إدخال نص');
+        return;
+    }
+    state.texts[selectedIndex] = editedText;
+    localStorage.setItem('texts', JSON.stringify(state.texts));
+    updateTextSelects();
+    alert('تم تعديل النص بنجاح');
+    elements.editTextForm.reset();
+}
+
+// Helper Functions
+function toggleAppVisibility(isAdmin) {
+    elements.authContainer.classList.toggle('hidden', isAdmin || !isAdmin);
+    elements.mainApp.classList.toggle('hidden', !isAdmin && !isAdmin);
+    elements.adminContent.classList.toggle('hidden', !isAdmin);
+}
+
+function updateTextSelects() {
+    const options = state.texts.map(text => `<option>${text}</option>`).join('');
+    elements.textSelect.innerHTML = `<option value="">اختر نصًا</option>${options}`;
+    elements.editTextSelect.innerHTML = `<option value="">اختر نصًا للتعديل</option>${options}`;
+}
+
+// Initialize App
+init();
