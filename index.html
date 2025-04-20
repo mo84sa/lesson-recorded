@@ -1,59 +1,76 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>مراجعة حفظ الدروس</title>
+    <title>نظام مراجعة حفظ الدروس</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h2>تسجيل الدخول</h2>
-    <form id="loginForm">
-        <label for="username">اسم المستخدم:</label>
-        <input type="text" id="username" required>
-        <label for="password">كلمة المرور:</label>
-        <input type="password" id="password" required>
-        <button type="submit">تسجيل الدخول</button>
-    </form>
-    <h2>إنشاء حساب جديد</h2>
-    <form id="signupForm">
-        <label for="newUsername">اسم المستخدم:</label>
-        <input type="text" id="newUsername" required>
-        <label for="newPassword">كلمة المرور:</label>
-        <input type="password" id="newPassword" required>
-        <button type="submit">إنشاء حساب</button>
-    </form>
-    <div id="content" class="hidden">
-        <h2>النصوص</h2>
-        <select id="textSelect"><option value="">اختر نصًا</option></select>
+    <div id="authContainer">
+        <h1>نظام مراجعة حفظ الدروس</h1>
         
-        <div id="permissionSection">
-            <button id="permissionBtn" class="permission-btn">طلب إذن الميكروفون</button>
-            <div id="permissionStatus" class="status hidden"></div>
+        <form id="loginForm">
+            <label for="username">اسم المستخدم:</label>
+            <input type="text" id="username" required>
+            
+            <label for="password">كلمة المرور:</label>
+            <input type="password" id="password" required>
+            
+            <button type="submit">تسجيل الدخول</button>
+        </form>
+        
+        <form id="signupForm">
+            <label for="newUsername">اسم المستخدم الجديد:</label>
+            <input type="text" id="newUsername" required>
+            
+            <label for="newPassword">كلمة المرور الجديدة:</label>
+            <input type="password" id="newPassword" required>
+            
+            <button type="submit">إنشاء حساب جديد</button>
+        </form>
+    </div>
+    
+    <div id="mainApp" class="hidden">
+        <button id="logoutBtn">تسجيل الخروج</button>
+        
+        <select id="textSelect">
+            <option value="">اختر نصًا</option>
+        </select>
+        
+        <div id="recordingSection">
+            <button id="permissionBtn">طلب إذن الميكروفون</button>
+            <button id="recordBtn" class="hidden">بدء التسجيل</button>
+            <div id="recordingStatus" class="hidden">
+                <p>جاري التسجيل...</p>
+                <p id="countdown">5</p>
+            </div>
         </div>
         
-        <button id="recordBtn" class="recording-btn hidden">ابدأ التسجيل</button>
-        <div id="recordingStatus" class="status recording-status hidden">
-            <p>جاري التسجيل...</p>
-            <p id="countdown">5</p>
+        <div id="evaluation" class="hidden">
+            <h2>نتيجة المراجعة</h2>
+            <div id="evaluationResult"></div>
         </div>
-        <div id="evaluation" class="hidden"></div>
+        
         <div id="adminContent" class="hidden">
-            <h2>إدارة النصوص</h2>
             <form id="addTextForm">
-                <label for="newText">أضف نص جديد:</label>
+                <label for="newText">النص الجديد:</label>
                 <input type="text" id="newText" required>
                 <button type="submit">إضافة النص</button>
             </form>
+            
             <form id="editTextForm" class="hidden">
-                <label for="editText">عدل النص:</label>
+                <label for="editText">النص المعدل:</label>
                 <input type="text" id="editText" required>
-                <button type="submit">تعديل النص</button>
+                <button type="submit">حفظ التعديلات</button>
             </form>
-            <button id="logoutBtn">تسجيل الخروج</button>
+            
+            <select id="editTextSelect">
+                <option value="">اختر نصًا للتعديل</option>
+            </select>
         </div>
     </div>
+    
     <script src="script.js"></script>
 </body>
 </html>
