@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 $db_host = 'localhost';
@@ -7,12 +8,12 @@ $db_name = 'text_editor_db';
 
 // Connect to MySQL
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+if ($conn->connect_error) die("Database connection failed: " . $conn->connect_error);
 
 // Create table if not exists
 $sql = "CREATE TABLE IF NOT EXISTS texts (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    content TEXT,
+    content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )";
 $conn->query($sql);
@@ -21,8 +22,7 @@ $conn->query($sql);
 if (isset($_POST['login'])) {
     $username = $_POST['username'];
     $password = $_POST['password'];
-    
-    // Simple hardcoded admin check (replace with database check in production)
+
     if ($username === 'admin' && $password === 'admin123') {
         $_SESSION['user'] = 'admin';
     } else {
@@ -47,7 +47,7 @@ if (isset($_POST['submit_text']) && $_SESSION['user'] === 'admin') {
 
 // Handle text deletion (Admin only)
 if (isset($_GET['delete']) && $_SESSION['user'] === 'admin') {
-    $id = $_GET['delete'];
+    $id = intval($_GET['delete']);
     $conn->query("DELETE FROM texts WHERE id = $id");
 }
 
@@ -76,27 +76,27 @@ $texts = $result->fetch_all(MYSQLI_ASSOC);
         </form>
 
     <?php else: ?>
-        <!-- Logout Button -->
+        <!-- Logout -->
         <p>Logged in as: <strong><?= $_SESSION['user'] ?></strong> | <a href="?logout">Logout</a></p>
 
-        <!-- Text Display (All Users) -->
+        <!-- Text Display -->
         <h2>Text Entries</h2>
         <?php if (empty($texts)): ?>
-            <p>No texts yet.</p>
+            <p>No texts available.</p>
         <?php else: ?>
             <?php foreach ($texts as $text): ?>
                 <div class="text-box">
                     <p><?= htmlspecialchars($text['content']) ?></p>
                     <?php if ($_SESSION['user'] === 'admin'): ?>
                         <div class="admin-controls">
-                            <a href="?delete=<?= $text['id'] ?>" onclick="return confirm('Delete this?')">Delete</a>
+                            <a href="?delete=<?= $text['id'] ?>" onclick="return confirm('Are you sure you want to delete this?')">Delete</a>
                         </div>
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
 
-        <!-- Text Submission Form (Admin Only) -->
+        <!-- Admin Text Submission -->
         <?php if ($_SESSION['user'] === 'admin'): ?>
             <h2>Add New Text</h2>
             <form method="POST">
