@@ -1,118 +1,43 @@
+// script.js
+let uploadedText = '';
+const isAdmin = true; // Change this to false for student view
 
-// Application State
-const state = {
-    users: JSON.parse(localStorage.getItem('users')) || [],
-    admin: { username: 'admin', password: 'admin123' },
-};
-
-// DOM Elements
-const elements = {
-    authContainer: document.getElementById('authContainer'),
-    loginForm: document.getElementById('loginForm'),
-    signupForm: document.getElementById('signupForm'),
-    usernameInput: document.getElementById('username'),
-    passwordInput: document.getElementById('password'),
-    newUsernameInput: document.getElementById('newUsername'),
-    newPasswordInput: document.getElementById('newPassword'),
-    mainApp: document.getElementById('mainApp'),
-    logoutBtn: document.getElementById('logoutBtn'),
-    textSelect: document.getElementById('textSelect'),
-    addTextForm: document.getElementById('addTextForm'),
-    newTextInput: document.getElementById('newText'),
-    evaluation: document.getElementById('evaluation'),
-    evaluationResult: document.getElementById('evaluationResult'),
-    adminContent: document.getElementById('adminContent'),
-};
-
-// Initialize the Application
-function init() {
-    setupEventListeners();
-    const loggedInUser = localStorage.getItem('loggedInUser');
-    if (loggedInUser) {
-        toggleAppVisibility(loggedInUser === state.admin.username);
-    }
+if (isAdmin) {
+    document.getElementById('admin-section').style.display = 'block';
+    document.getElementById('upload-button').addEventListener('click', function() {
+        uploadedText = document.getElementById('text-input').value;
+        document.getElementById('text-display').innerText = uploadedText;
+        document.getElementById('student-section').style.display = 'block';
+    });
+} else {
+    document.getElementById('admin-section').style.display = 'none';
+    document.getElementById('student-section').style.display = 'block';
 }
 
-// Set up Event Listeners
-function setupEventListeners() {
-    elements.loginForm.addEventListener('submit', handleLogin);
-    elements.signupForm.addEventListener('submit', handleSignup);
-    elements.logoutBtn.addEventListener('click', handleLogout);
-    elements.addTextForm?.addEventListener('submit', handleAddText);
-}
+document.getElementById('record-button').addEventListener('click', function() {
+    const mediaRecorder = new MediaRecorder(new AudioContext().createMediaStreamDestination().stream);
+    const audioChunks = [];
 
-// Handle User Login
-function handleLogin(e) {
-    e.preventDefault();
-    const username = elements.usernameInput.value.trim();
-    const password = elements.passwordInput.value.trim();
+    mediaRecorder.start();
 
-    if (username === state.admin.username && password === state.admin.password) {
-        localStorage.setItem('loggedInUser', username);
-        toggleAppVisibility(true);
-    } else if (state.users.some(user => user.username === username && user.password === password)) {
-        localStorage.setItem('loggedInUser', username);
-        toggleAppVisibility(false);
-    } else {
-        alert('اسم المستخدم أو كلمة المرور غير صحيحة');
-    }
-    elements.loginForm.reset();
-}
+    mediaRecorder.ondataavailable = function(event) {
+        audioChunks.push(event.data);
+    };
 
-// Handle User Signup
-function handleSignup(e) {
-    e.preventDefault();
-    const username = elements.newUsernameInput.value.trim();
-    const password = elements.newPasswordInput.value.trim();
+    mediaRecorder.onstop = function() {
+        const audioBlob = new Blob(audioChunks);
+        const audioUrl = URL.createObjectURL(audioBlob);
+        document.getElementById('audio-playback').src = audioUrl;
+        document.getElementById('audio-playback').style.display = 'block';
 
-    if (state.users.some(user => user.username === username)) {
-        alert('اسم المستخدم موجود بالفعل');
-        return;
-    }
+        // Simple feedback mechanism (this can be improved)
+        const feedback = uploadedText.split(' ').length === audioChunks.length ? 
+            "Great job! You recited the text correctly." : 
+            "Keep practicing! Try to recite the text more accurately.";
+        document.getElementById('feedback').innerText = feedback;
+    };
 
-    state.users.push({ username, password });
-    localStorage.setItem('users', JSON.stringify(state.users));
-
-    alert('تم إنشاء الحساب بنجاح');
-    elements.signupForm.reset();
-}
-
-// Handle Logout
-function handleLogout() {
-    localStorage.removeItem('loggedInUser');
-    toggleAppVisibility(false);
-}
-
-// Handle Adding Text (Admin Only)
-function handleAddText(e) {
-    e.preventDefault();
-    const newText = elements.newTextInput.value.trim();
-
-    if (!newText) {
-        alert('الرجاء إدخال نص');
-        return;
-    }
-
-    fetch('admin_text_editor.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ submit_text: true, content: newText }),
-    })
-        .then(response => response.text())
-        .then(() => {
-            alert('تم إضافة النص بنجاح');
-            elements.addTextForm.reset();
-            location.reload(); // Reload to fetch updated texts
-        })
-        .catch(error => console.error('Error:', error));
-}
-
-// Toggle Application Visibility
-function toggleAppVisibility(isAdmin) {
-    elements.authContainer.classList.add('hidden');
-    elements.mainApp.classList.remove('hidden');
-    elements.adminContent.classList.toggle('hidden', !isAdmin);
-}
-
-// Initialize the App
-init();
+    setTimeout(() => {
+        mediaRecorder.stop();
+    }, 5000); // Record for 5 seconds
+});
