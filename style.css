@@ -1,1 +1,33 @@
-
+body { 
+    font-family: 'Amiri', serif; 
+    direction: rtl; 
+    text-align: right; 
+    padding: 10px; 
+    background-color: #f0f0f0; 
+    color: #333; 
+}
+h2, label { color: #2e3b4e; }
+input, button, select { 
+    width: 100%; 
+    margin-bottom: 10px; 
+    padding: 10px; 
+    border: 1px solid #ccc; 
+    border-radius: 5px; 
+    font-family: 'Amiri', serif; 
+}
+button { 
+    background-color: #2e3b4e; 
+    color: #fff; 
+    cursor: pointer; 
+}
+button:hover { background-color: #1e2b3e; }
+.hidden { display: none; }
+.permission-btn { background-color: #4CAF50; }
+.recording-btn { background-color: #f44336; }
+.status { 
+    padding: 10px; 
+    margin: 10px 0; 
+    border-radius: 5px; 
+}
+.permission-granted { background-color: #dff0d8; color: #3c763d; }
+.recording-status { background-color: #fcf8e3; color: #8a6d3b; }
