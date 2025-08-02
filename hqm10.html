@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تسميع جزء عم مع التصحيح</title>
+    <style>
+        :root {
+            --primary: #2ecc71;
+            --primary-dark: #27ae60;
+            --error: #e74c3c;
+            --warning: #f39c12;
+            --text: #2c3e50;
+            --bg: #f5f5f5;
+        }
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 10px;
+            color: var(--text);
+            touch-action: manipulation;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: var(--text);
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .surah-selector {
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        select, button {
+            padding: 12px;
+            font-size: 16px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+            transition: all 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        select:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+            user-select: none;
+        }
+        
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        button:active {
+            transform: scale(0.96);
+        }
+        
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #surah-text {
+            font-size: 20px;
+            line-height: 1.8;
+            text-align: right;
+            margin: 20px 0;
+            color: var(--text);
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-right: 4px solid #3498db;
+            overflow-wrap: break-word;
+        }
+        
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--error);
+        }
+        
+        .correct {
+            color: var(--primary-dark);
+            font-weight: bold;
+        }
+        
+        .incorrect {
+            color: var(--error);
+            text-decoration: underline;
+            font-weight: bold;
+        }
+        
+        .missing {
+            color: var(--warning);
+            text-decoration: line-through;
+        }
+        
+        #progress {
+            margin-top: 12px;
+            font-weight: bold;
+            color: #3498db;
+            font-size: 14px;
+            text-align: center;
+            min-height: 20px;
+        }
+        
+        .mic-status {
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .active-mic {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .error-mic {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .result-stats {
+            background: #ecf0f1;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+        
+        .buttons-container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .buttons-container button {
+            flex: 1;
+        }
+        
+        /* تحسينات خاصة للشاشات الصغيرة */
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+            
+            .container {
+                padding: 12px;
+            }
+            
+            #surah-text {
+                font-size: 18px;
+                line-height: 1.6;
+                padding: 10px;
+            }
+            
+            select, button {
+                padding: 10px 8px;
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>تسميع جزء عم مع التصحيح</h1>
+        
+        <div class="surah-selector">
+            <select id="surah-select">
+                <option value="">اختر سورة</option>
+                <option value="surah-ikhlas">سورة الإخلاص</option>
+                <option value="surah-falaq">سورة الفلق</option>
+                <option value="surah-nas">سورة الناس</option>
+                <option value="surah-nasr">سورة النصر</option>
+                <option value="surah-masad">سورة المسد</option>
+            </select>
+        </div>
+        
+        <div id="surah-text"></div>
+        
+        <div class="buttons-container">
+            <button id="start-btn">🎤 بدء التسميع</button>
+            <button id="test-mic-btn">فحص الميكروفون</button>
+            <button id="stop-btn" disabled>⏹ إيقاف</button>
+        </div>
+        
+        <div id="mic-status" class="mic-status"></div>
+        <div id="progress"></div>
+        
+        <div id="result">
+            <p style="text-align:center;color:#7f8c8d;">سيظهر هنا نتيجة التسميع بعد القراءة</p>
+        </div>
+    </div>
+
+    <script>
+        // التحقق من دعم HTTPS
+        if (window.location.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+            alert('لأفضل أداء، يرجى فتح التطبيق عبر اتصال آمن (HTTPS)');
+        }
+
+        const surahs = {
+            "surah-ikhlas": {
+                name: "سورة الإخلاص",
+                text: "قُلْ هُوَ اللَّهُ أَحَدٌ ﴿١﴾ اللَّهُ الصَّمَدُ ﴿٢﴾ لَمْ يَلِدْ وَلَمْ يُولَدْ ﴿٣﴾ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ ﴿٤﴾"
+            },
+            "surah-falaq": {
+                name: "سورة الفلق",
+                text: "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ﴿١﴾ مِن شَرِّ مَا خَلَقَ ﴿٢﴾ وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ ﴿٣﴾ وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ﴿٤﴾ وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ ﴿٥﴾"
+            },
+            "surah-nas": {
+                name: "سورة الناس",
+                text: "قُلْ أَعُوذُ بِرَبِّ النَّاسِ ﴿١﴾ مَلِكِ النَّاسِ ﴿٢﴾ إِلَٰهِ النَّاسِ ﴿٣﴾ مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ﴿٤﴾ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ﴿٥﴾ مِنَ الْجِنَّةِ وَالنَّاسِ ﴿٦﴾"
+            },
+            "surah-nasr": {
+                name: "سورة النصر",
+                text: "إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ ﴿١﴾ وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا ﴿٢﴾ فَسَبِّحْ بِحَمْدِ رَبِّكَ وَاسْتَغْفِرْهُ إِنَّهُ كَانَ تَوَّابًا ﴿٣﴾"
+            },
+            "surah-masad": {
+                name: "سورة المسد",
+                text: "تَبَّتْ يَدَا أَبِي لَهَبٍ وَتَبَّ ﴿١﴾ مَا أَغْنَىٰ عَنْهُ مَالُهُ وَمَا كَسَبَ ﴿٢﴾ سَيَصْلَىٰ نَارًا ذَاتَ لَهَبٍ ﴿٣﴾ وَامْرَأَتُهُ حَمَّالَةَ الْحَطَبِ ﴿٤﴾ فِي جِيدِهَا حَبْلٌ مِّن مَّسَدٍ ﴿٥﴾"
+            }
+        };
+
+        const elements = {
+            surahSelect: document.getElementById('surah-select'),
+            startBtn: document.getElementById('start-btn'),
+            testMicBtn: document.getElementById('test-mic-btn'),
+            stopBtn: document.getElementById('stop-btn'),
+            surahText: document.getElementById('surah-text'),
+            result: document.getElementById('result'),
+            progress: document.getElementById('progress'),
+            micStatus: document.getElementById('mic-status')
+        };
+
+        let recognition = null;
+        let selectedSurah = null;
+        let isListening = false;
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
+
+        // تهيئة التطبيق
+        document.addEventListener('DOMContentLoaded', () => {
+            showProgress('مرحباً! اختر سورة ثم اضغط على "بدء التسميع"');
+            document.addEventListener('touchstart', function() {}, {passive: true});
+        });
+
+        // اختبار الميكروفون
+        elements.testMicBtn.addEventListener('click', async () => {
+            showProgress('🔊 جاري فحص الميكروفون...');
+            try {
+                const stream = await checkMicrophoneWithFallback();
+                showAlert('✅ الميكروفون يعمل بشكل صحيح');
+                showProgress('🎤 الميكروفون جاهز للاستخدام');
+                stream.getTracks().forEach(track => track.stop());
+            } catch (error) {
+                showAlert('❌ مشكلة في الميكروفون: ' + error.message);
+                showProgress('❌ يلزم إصلاح الميكروفون أولاً');
+            }
+        });
+
+        // حل متعدد المتصفحات للوصول للميكروفون
+        async function checkMicrophoneWithFallback() {
+            // المحاولة بالطريقة الحديثة أولاً
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                return await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+            }
+            
+            // المحاولة بالطرق القديمة إذا فشلت
+            const legacyGetUserMedia = navigator.getUserMedia || 
+                                     navigator.webkitGetUserMedia || 
+                                     navigator.mozGetUserMedia;
+            
+            if (legacyGetUserMedia) {
+                return new Promise((resolve, reject) => {
+                    legacyGetUserMedia({ audio: true }, resolve, reject);
+                });
+            }
+            
+            throw new Error('المتصفح لا يدعم الوصول للميكروفون');
+        }
+
+        // التعامل مع اختيار السورة
+        elements.surahSelect.addEventListener('change', () => {
+            const id = elements.surahSelect.value;
+            selectedSurah = surahs[id] || null;
+            
+            if (selectedSurah) {
+                elements.surahText.innerHTML = `
+                    <h2 style="text-align:center;margin-top:0;">${selectedSurah.name}</h2>
+                    <p style="margin-bottom:0;">${selectedSurah.text}</p>
+                `;
+                elements.result.innerHTML = `
+                    <p style="text-align:center;color:#7f8c8d;">
+                        سيظهر هنا نتيجة التسميع بعد القراءة
+                    </p>
+                `;
+            } else {
+                elements.surahText.innerHTML = '';
+            }
+        });
+
+        // بدء التسميع
+        elements.startBtn.addEventListener('click', handleStart);
+        elements.stopBtn.addEventListener('click', resetRecognition);
+
+        // للجوال: إضافة أحداث اللمس
+        elements.startBtn.addEventListener('touchend', handleStart);
+        elements.stopBtn.addEventListener('touchend', resetRecognition);
+
+        async function handleStart() {
+            if (!selectedSurah) {
+                showAlert('الرجاء اختيار سورة أولاً');
+                return;
+            }
+            
+            showProgress('⏳ جاري التحضير...');
+            
+            try {
+                // إعادة تهيئة التعرف على الصوت في كل مرة
+                if (recognition) {
+                    recognition.stop();
+                    recognition = null;
+                }
+                
+                const hasPermission = await checkMicrophonePermission();
+                if (!hasPermission) return;
+                
+                initSpeechRecognition();
+                
+                // إضافة تأخير لضمان تهيئة النظام
+                setTimeout(() => {
+                    try {
+                        recognition.start();
+                        showProgress('🎙️ ابدأ القراءة الآن...');
+                    } catch (e) {
+                        showMicStatus('❌ فشل التشغيل، جاري إعادة المحاولة...', 'error-mic');
+                        if (retryCount < MAX_RETRIES) {
+                            retryCount++;
+                            setTimeout(() => handleStart(), 1500);
+                        }
+                    }
+                }, 300);
+            } catch (error) {
+                console.error('Init error:', error);
+                showMicStatus('❌ خطأ في النظام الصوتي', 'error-mic');
+            }
+        }
+
+        function showAlert(message) {
+            alert(message);
+        }
+
+        async function checkMicrophonePermission() {
+            try {
+                const stream = await checkMicrophoneWithFallback();
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (error) {
+                showMicStatus('❌ يلزم السماح باستخدام الميكروفون', 'error-mic');
+                showAlert('الرجاء منح الإذن لاستخدام الميكروفون:\n1. اضغط على أيقونة القفل\n2. اختر "السماح" للميكروفون');
+                return false;
+            }
+        }
+
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                showMicStatus('❌ المتصفح لا يدعم التعرف على الصوت', 'error-mic');
+                elements.startBtn.disabled = true;
+                showAlert('للتشغيل الأمثل:\n- استخدم Chrome أو Edge على أندرويد\n- أو Safari على iOS');
+                return;
+            }
+            
+            recognition = new SpeechRecognition();
+            
+            // تحسينات للتعرف على العربية
+            recognition.lang = navigator.language.startsWith('ar') ? 'ar-SA' : 'ar-EG';
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 3;
+            
+            recognition.onstart = () => {
+                isListening = true;
+                retryCount = 0;
+                showMicStatus('🎤 جاري الاستماع... اقرأ الآن بوضوح', 'active-mic');
+                toggleButtons(true);
+            };
+            
+            recognition.onresult = (event) => {
+                const transcript = event.results[event.results.length-1][0].transcript;
+                showProgress('🔍 جاري تحليل التلاوة...');
+                setTimeout(() => checkRecitation(transcript), 500);
+            };
+            
+            recognition.onerror = (event) => {
+                let errorMessage = `❌ خطأ: ${getErrorDescription(event.error)}`;
+                if(event.error === 'not-allowed') {
+                    errorMessage = 'تم رفض الإذن. يرجى:\n1. تفعيل الميكروفون في إعدادات المتصفح\n2. التأكد من عدم منع الموقع';
+                }
+                showMicStatus(errorMessage, 'error-mic');
+                
+                if (isListening && retryCount < MAX_RETRIES) {
+                    retryCount++;
+                    setTimeout(() => {
+                        try {
+                            recognition.start();
+                        } catch(e) {
+                            console.error('Retry error:', e);
+                        }
+                    }, 1000);
+                } else {
+                    resetRecognition();
+                }
+            };
+            
+            recognition.onend = () => {
+                if (isListening) {
+                    setTimeout(() => {
+                        try {
+                            recognition.start();
+                        } catch(e) {
+                            console.error('Restart error:', e);
+                            resetRecognition();
+                        }
+                    }, 800);
+                }
+            };
+        }
+
+        function getErrorDescription(errorCode) {
+            const errors = {
+                'no-speech': 'لم يتم اكتشاف أي كلام',
+                'audio-capture': 'لم يتم العثور على ميكروفون',
+                'not-allowed': 'تم رفض إذن الميكروفون',
+                'service-not-allowed': 'الخدمة غير مسموحة',
+                'bad-grammar': 'خطأ في القواعد',
+                'language-not-supported': 'اللغة غير مدعومة',
+                'network': 'يحتاج إلى اتصال بالإنترنت'
+            };
+            
+            return errors[errorCode] || errorCode;
+        }
+
+        function showMicStatus(message, statusClass) {
+            elements.micStatus.style.display = 'block';
+            elements.micStatus.className = `mic-status ${statusClass}`;
+            elements.micStatus.innerHTML = message.replace(/\n/g, '<br>');
+        }
+
+        function showProgress(message) {
+            elements.progress.textContent = message;
+        }
+
+        function toggleButtons(listening) {
+            elements.startBtn.disabled = listening;
+            elements.stopBtn.disabled = !listening;
+        }
+
+        function resetRecognition() {
+            isListening = false;
+            retryCount = 0;
+            toggleButtons(false);
+            
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (e) {
+                    console.error('Error stopping recognition:', e);
+                }
+            }
+            
+            elements.micStatus.style.display = 'none';
+            showProgress('تم إيقاف التسميع');
+        }
+
+        function cleanText(text) {
+            return text
+                .replace(/﴿\d+﴾/g, '')
+                .replace(/[^؀-ۿ\s]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function areWordsSimilar(w1, w2) {
+            if (w1 === w2) return true;
+            
+            // إزالة التشكيل للمقارنة
+            const removeTashkeel = str => str.replace(/[\u064B-\u065F\u0670]/g, '');
+            const cleanW1 = removeTashkeel(w1);
+            const cleanW2 = removeTashkeel(w2);
+            
+            return cleanW1 === cleanW2;
+        }
+
+        function calculateAccuracy(correct, total) {
+            return total > 0 ? Math.round((correct / total) * 100) : 0;
+        }
+
+        function compareRecitation(original, userInput) {
+            const o = original.split(' ');
+            const u = userInput.split(' ');
+            const len = Math.max(o.length, u.length);
+            
+            let html = '', correct = 0, wrong = 0, missing = 0, extra = 0;
+            
+            for (let i = 0; i < len; i++) {
+                const ow = o[i], uw = u[i];
+                
+                if (ow && uw) {
+                    if (areWordsSimilar(ow, uw)) {
+                        html += `<span class="correct">${ow}</span> `;
+                        correct++;
+                    } else {
+                        html += `<span class="incorrect">${ow}</span> `;
+                        wrong++;
+                    }
+                } else if (ow && !uw) {
+                    html += `<span class="missing">${ow}</span> `;
+                    missing++;
+                } else if (!ow && uw) {
+                    extra++;
+                }
+            }
+            
+            return {
+                resultHTML: html,
+                correctWords: correct,
+                incorrectWords: wrong,
+                missingWords: missing,
+                extraWords: extra
+            };
+        }
+
+        function checkRecitation(transcript) {
+            if (!selectedSurah) return;
+            
+            const originalText = cleanText(selectedSurah.text);
+            const userText = cleanText(transcript);
+            
+            const {
+                resultHTML,
+                correctWords,
+                incorrectWords,
+                missingWords,
+                extraWords
+            } = compareRecitation(originalText, userText);
+            
+            const accuracy = calculateAccuracy(correctWords, originalText.split(' ').length);
+            
+            displayResults(
+                resultHTML,
+                correctWords,
+                incorrectWords,
+                missingWords,
+                extraWords,
+                accuracy
+            );
+            
+            showProgress(accuracy >= 80 ? '🎉 ممتاز! واصل' : accuracy >= 50 ? 'جيد، يمكنك تحسين النتيجة' : 'حاول مرة أخرى للتحسين');
+        }
+
+        function displayResults(html, c, i, m, e, a) {
+            elements.result.innerHTML = `
+                <h3 style="text-align:center;margin-top:0;">نتيجة التسميع</h3>
+                <p style="text-align:center;font-size:18px;line-height:1.6;">${html}</p>
+                <div class="result-stats">
+                    <p>✅ الكلمات الصحيحة: ${c}</p>
+                    <p>❌ الكلمات الخاطئة: ${i}</p>
+                    <p>⚠️ الكلمات الناقصة: ${m}</p>
+                    <p>➕ الكلمات الزائدة: ${e}</p>
+                    <p>📊 نسبة الدقة: ${a}%</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
